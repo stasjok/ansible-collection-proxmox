@@ -1,6 +1,10 @@
-My Ansible collection for managing Proxmox Virtual Environment.
+# Ansible Collection - stasjok.proxmox
 
-# Dependencies
+My personal Ansible collection for managing Proxmox Virtual Environment.
+
+## Development
+
+### Dependencies
 
 Add binary dependencies to `PATH`:
 
