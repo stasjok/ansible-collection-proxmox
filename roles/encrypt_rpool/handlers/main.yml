@@ -1,0 +1,5 @@
+# Don't bother triggering only grub or systemd-boot, just run update-grub,
+# it will trigger proxmox-boot-tool refresh
+- name: update-grub
+  ansible.builtin.command:
+    cmd: update-grub

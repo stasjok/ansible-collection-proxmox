@@ -36,7 +36,8 @@ tags:
 # collection label 'namespace.name'. The value is a version range
 # L(specifiers,https://python-semanticversion.readthedocs.io/en/latest/#requirement-specification). Multiple version
 # range specifiers can be set and are separated by ','
-dependencies: {}
+dependencies:
+  debops.debops: "==0.0.0"  # dropbear_initramfs only in git
 
 # The URL of the originating SCM repository
 repository: https://github.com/stasjok/ansible-collection-proxmox

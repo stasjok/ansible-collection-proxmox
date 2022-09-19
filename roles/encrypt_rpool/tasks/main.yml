@@ -1,0 +1,120 @@
+# Validation
+- name: assert passphrase length
+  ansible.builtin.assert:
+    that:
+      - proxmox_rpool_passphrase | length >= 8
+    fail_msg: Passphrase too short (min 8).
+
+- name: get `encryptionroot` property for all datasets on rpool
+  community.general.zfs_facts:
+    name: rpool
+    properties: encryptionroot
+    recurse: true
+    type: filesystem
+
+- name: get `feature@encryption` property for rpool
+  community.general.zpool_facts:
+    name: rpool
+    properties: health,feature@encryption
+
+- name: ensure that rpool's health is ONLINE
+  ansible.builtin.assert:
+    that:
+      - ansible_facts["zfs_pools"][0]["health"] == "ONLINE"
+    success_msg: rpool's health is ONLINE
+    fail_msg: rpool's health is not ONLINE
+
+- name: ensure that encryption is enabled (but not active) on rpool
+  ansible.builtin.assert:
+    that:
+      - ansible_facts["zfs_pools"][0]["feature@encryption"] == "enabled"
+        or ansible_facts["zfs_pools"][0]["feature@encryption"] == "active"
+        and ansible_facts["zfs_datasets"] | rejectattr("encryptionroot", "eq", "rpool") | length == 0
+    success_msg: Encryption is enabled on rpool or it is already encrypted
+    fail_msg: Encryption is disabled or there are any encrypted datasets on rpool
+
+- name: reboot to initramfs and encrypt rpool
+  block:
+    - name: add a break to kernel commandline (systemd-boot)
+      ansible.builtin.lineinfile:
+        path: /etc/kernel/cmdline
+        state: present
+        # Can replace `break` only at the end of line
+        regexp: ^(.*?)(?:\s+break|\s+break=\w+)?$
+        line: \1 break=mount
+        backrefs: true
+        firstmatch: true
+      notify: update-grub
+
+    - name: add a break to kernel commandline (grub)
+      ansible.builtin.lineinfile:
+        path: /etc/default/grub
+        state: present
+        # Can replace `break` only at the end of parameter
+        regexp: ^GRUB_CMDLINE_LINUX_DEFAULT="?(.*?)(?:\s+break|\s+break=\w+)?"?$
+        line: GRUB_CMDLINE_LINUX_DEFAULT="\1 break=mount"
+        backrefs: true
+      notify: update-grub
+
+    - name: flush handlers
+      ansible.builtin.meta: flush_handlers
+
+    - name: reboot to initramfs
+      ansible.builtin.reboot:
+        reboot_timeout: 5
+      register: result
+      failed_when:
+        - result is failed
+        - not result.rebooted
+
+    # Can't use `ansible.builtin.wait_for_connection`, because it requires python
+    - name: wait for initramfs to become available
+      ansible.builtin.wait_for:
+        port: "{{ dropbear_initramfs__port }}"
+        state: started
+        host: "{{ ansible_host | default(inventory_hostname) }}"
+      delegate_to: localhost
+
+    - name: encrypt rpool
+      port: "{{ dropbear_initramfs__port }}"
+      ansible.builtin.script:
+        cmd: encrypt_rpool.sh rpool {{ proxmox_rpool_passphrase | quote }}
+
+    - name: wait for server to become available
+      ansible.builtin.wait_for_connection:
+  when: ansible_facts["zfs_datasets"] | rejectattr("encryptionroot", "eq", "-") | length == 0
+
+- name: remove a break from kernel commandline (systemd-boot)
+  ansible.builtin.lineinfile:
+    path: /etc/kernel/cmdline
+    state: present
+    # Can remove `break` only at the end of line
+    regexp: ^(.*?)(?:\s+break|\s+break=\w+)?$
+    line: \1
+    backrefs: true
+    firstmatch: true
+  notify: update-grub
+
+- name: remove a break from kernel commandline (grub)
+  ansible.builtin.lineinfile:
+    path: /etc/default/grub
+    state: present
+    # Can remove `break` only at the end of parameter
+    regexp: ^GRUB_CMDLINE_LINUX_DEFAULT="?(.*?)(?:\s+break|\s+break=\w+)?"?$
+    line: GRUB_CMDLINE_LINUX_DEFAULT="\1"
+    backrefs: true
+  notify: update-grub
+
+- name: get `encryptionroot` property for all datasets on rpool
+  community.general.zfs_facts:
+    name: rpool
+    properties: encryptionroot
+    recurse: true
+    type: filesystem
+
+- name: ensure that all datasets on rpool are encrypted
+  ansible.builtin.assert:
+    that:
+      - ansible_facts["zfs_datasets"] | rejectattr("encryptionroot", "eq", "rpool") | length == 0
+    success_msg: All datasets on rpool are encrypted
+    fail_msg: rpool is not encrypted
