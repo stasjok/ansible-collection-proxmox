@@ -1,10 +1,5 @@
 galaxy_info:
   description: Encrypt Proxmox Virtual Environment ZFS root pool
-  standalone: false
-  platforms:
-    - name: Debian
-      versions:
-        - bullseye
 
 dependencies:
-  - role: debops.debops.dropbear_initramfs
+  - role: stasjok.proxmox.dropbear_initramfs
