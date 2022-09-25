@@ -1,0 +1,4 @@
+dropbear_initramfs_port: 10022
+dropbear_initramfs_options: -s -j -k
+dropbear_initramfs_authorized_keys: ~
+dropbear_initramfs_authorized_keys_exclusive: true

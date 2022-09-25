@@ -1,0 +1,18 @@
+argument_specs:
+  main:
+    short_description: Installing and configuring dropbear-initramfs
+    options:
+      dropbear_initramfs_port:
+        description: The tcp port to listen
+        type: int
+        default: 10022
+      dropbear_initramfs_options:
+        description: Other arguments to dropbear except tcp port
+        default: -s -j -k
+      dropbear_initramfs_authorized_keys:
+        description: SSH public key(s) used for authentication
+        required: true
+      dropbear_initramfs_authorized_keys_exclusive:
+        description: Whether to remove all other non-specified keys from the authorized_keys file
+        type: bool
+        default: true

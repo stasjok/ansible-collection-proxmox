@@ -1,0 +1,26 @@
+initramfs_ip_config_path: /etc/initramfs-tools/conf.d/ip.conf
+initramfs_ip_address: '{{
+  ansible_facts["default_ipv4"]["address"] | default("")
+  if initramfs_ip_autoconf in ["off", "none"]
+  else "" }}'
+initramfs_ip_server_ip: ""
+initramfs_ip_gateway: '{{
+  ansible_facts["default_ipv4"]["gateway"] | default("")
+  if initramfs_ip_autoconf in ["off", "none"]
+  else "" }}'
+initramfs_ip_netmask: '{{
+  ansible_facts["default_ipv4"]["netmask"] | default("")
+  if initramfs_ip_autoconf in ["off", "none"]
+  else "" }}'
+initramfs_ip_hostname: '{{ ansible_facts["fqdn"] }}'
+initramfs_ip_device: ""
+initramfs_ip_autoconf: none
+initramfs_ip_dns0: '{{
+  ansible_facts["dns"]["nameservers"] | ansible.utils.ipv4 | sort | first | default("")
+  if initramfs_ip_autoconf in ["off", "none"]
+  else "" }}'
+initramfs_ip_dns1: '{{
+  (ansible_facts["dns"]["nameservers"] | ansible.utils.ipv4 | sort)[1] | default("")
+  if initramfs_ip_autoconf in ["off", "none"]
+  else "" }}'
+initramfs_ip_ntp0: ""

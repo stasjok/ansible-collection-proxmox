@@ -1,0 +1,34 @@
+- name: Validating arguments
+  ansible.builtin.assert:
+    that:
+      - dropbear_initramfs_port | int >= 1
+      - dropbear_initramfs_port | int <= 65535
+      - dropbear_initramfs_authorized_keys is string
+    fail_msg: Argument is invalid
+
+- name: Installing 'dropbear-initramfs' package
+  ansible.builtin.apt:
+    name: dropbear-initramfs
+    state: present
+    # don't install recommended cryptsetup-initramfs
+    install_recommends: false
+  notify: update-initramfs all
+
+- name: Copying dropbear-initramfs config file
+  ansible.builtin.template:
+    dest: /etc/dropbear-initramfs/config
+    src: config.j2
+    owner: root
+    group: root
+    mode: 0644
+  notify: update-initramfs all
+
+- name: Managing dropbear-initramfs authorized_keys
+  ansible.posix.authorized_key:
+    user: root
+    key: "{{ dropbear_initramfs_authorized_keys }}"
+    state: present
+    exclusive: "{{ dropbear_initramfs_authorized_keys_exclusive }}"
+    path: /etc/dropbear-initramfs/authorized_keys
+    manage_dir: false
+  notify: update-initramfs all

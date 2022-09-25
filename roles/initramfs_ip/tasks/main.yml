@@ -1,0 +1,41 @@
+- name: Validating arguments
+  ansible.builtin.assert:
+    that:
+      - initramfs_ip_address == "" or initramfs_ip_address is ansible.utils.ipv4_address
+      - initramfs_ip_server_ip == "" or initramfs_ip_server_ip is ansible.utils.ipv4_address
+      - initramfs_ip_gateway == "" or initramfs_ip_gateway is ansible.utils.ipv4_address
+      - initramfs_ip_netmask == "" or initramfs_ip_netmask is ansible.utils.ipv4_netmask
+      - '":" not in initramfs_ip_hostname'
+      - initramfs_ip_device in ansible_facts["interfaces"] + ["", "all"]
+      - initramfs_ip_dns0 == "" or initramfs_ip_dns0 is ansible.utils.ipv4_address
+      - initramfs_ip_dns1 == "" or initramfs_ip_dns1 is ansible.utils.ipv4_address
+      - initramfs_ip_ntp0 == "" or initramfs_ip_ntp0 is ansible.utils.ipv4_address
+    fail_msg: Argument is invalid
+
+- name: Adding an IP parameter to initramfs config file
+  ansible.builtin.lineinfile:
+    path: "{{ initramfs_ip_config_path }}"
+    line: IP={{ initramfs_ip_parameter | quote }}
+    state: present
+    regexp: ^IP=
+    create: true
+    owner: root
+    group: root
+    mode: 0644
+  notify: update-initramfs all
+  vars:
+    initramfs_ip_parameter: |-
+      {{
+        "{client}:{server}:{gw}:{netmask}:{hostname}:{device}:{autoconf}:{dns0}:{dns1}:{ntp0}".format(
+          client=initramfs_ip_address,
+          server=initramfs_ip_server_ip,
+          gw=initramfs_ip_gateway,
+          netmask=initramfs_ip_netmask,
+          hostname=initramfs_ip_hostname,
+          device=initramfs_ip_device,
+          autoconf=initramfs_ip_autoconf,
+          dns0=initramfs_ip_dns0,
+          dns1=initramfs_ip_dns1,
+          ntp0=initramfs_ip_ntp0
+        )
+      }}

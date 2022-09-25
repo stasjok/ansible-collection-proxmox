@@ -1,0 +1,62 @@
+argument_specs:
+  main:
+    short_description: Setting up IP settings for initramfs
+    options:
+      initramfs_ip_config_path:
+        description: A path to initramfs config where to put IP variable
+        type: path
+        default: /etc/initramfs-tools/conf.d/ip.conf
+      initramfs_ip_address:
+        description: IP address for static IP assignment
+        default: '{{
+          ansible_facts["default_ipv4"]["address"] | default("")
+          if initramfs_ip_autoconf in ["off", "none"]
+          else "" }}'
+      initramfs_ip_server_ip:
+        description: IP address of the NFS server
+        default: ""
+      initramfs_ip_gateway:
+        description: IP address of a gateway for static IP assignment
+        default: '{{
+          ansible_facts["default_ipv4"]["gateway"] | default("")
+          if initramfs_ip_autoconf in ["off", "none"]
+          else "" }}'
+      initramfs_ip_netmask:
+        description: Netmask for static IP assignment
+        default: '{{
+          ansible_facts["default_ipv4"]["netmask"] | default("")
+          if initramfs_ip_autoconf in ["off", "none"]
+          else "" }}'
+      initramfs_ip_hostname:
+        description: Name of the client
+        default: '{{ ansible_facts["fqdn"] }}'
+      initramfs_ip_device:
+        description: Name of network device to use
+        default: ""
+      initramfs_ip_autoconf:
+        description: Method to use for autoconfiguration
+        choices:
+          - "off"
+          - none
+          - ""
+          - "on"
+          - any
+          - dhcp
+          - bootp
+          - rarp
+          - both
+      initramfs_ip_dns0:
+        description: IP address of primary nameserver
+        default: '{{
+          ansible_facts["dns"]["nameservers"] | ansible.utils.ipv4 | sort | first | default("")
+          if initramfs_ip_autoconf in ["off", "none"]
+          else "" }}'
+      initramfs_ip_dns1:
+        description: IP address of secondary nameserver
+        default: '{{
+          (ansible_facts["dns"]["nameservers"] | ansible.utils.ipv4 | sort)[1] | default("")
+          if initramfs_ip_autoconf in ["off", "none"]
+          else "" }}'
+      initramfs_ip_ntp0:
+        description: IP address of a Network Time Protocol (NTP) server
+        default: ""

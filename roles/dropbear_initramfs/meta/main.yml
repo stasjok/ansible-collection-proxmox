@@ -1,0 +1,6 @@
+galaxy_info:
+  description: Installing and configuring dropbear-initramfs
+
+dependencies:
+  - role: stasjok.proxmox.initramfs_ip
+  - role: stasjok.proxmox.initramfs_handlers

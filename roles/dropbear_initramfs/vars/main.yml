@@ -1,0 +1,2 @@
+dropbear_initramfs_options_final: |-
+  {{ dropbear_initramfs_options }}{{ " " if dropbear_initramfs_options }}-p {{ dropbear_initramfs_port }}
