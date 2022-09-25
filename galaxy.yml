@@ -39,6 +39,7 @@ tags:
 dependencies:
   ansible.posix: ">=1.0.0"
   ansible.utils: ">=2.5.0"
+  community.general: "*"
 
 # The URL of the originating SCM repository
 repository: https://github.com/stasjok/ansible-collection-proxmox
